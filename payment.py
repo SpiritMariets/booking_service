@@ -7,9 +7,16 @@ load_dotenv()
 
 SHOP_ID = os.getenv("SHOP_ID")
 SECRET_KEY = os.getenv("SECRET_KEY")
+LOG_FILE = os.getenv("LOG_FILE")
 
 Configuration.account_id = SHOP_ID
 Configuration.secret_key = SECRET_KEY
+
+# логирование вебхуков
+def log_webhook(data: dict):
+    with open(LOG_FILE, "a") as f:
+        from datetime import datetime
+        f.write(f"\n[{datetime.now()}] {data}\n")
 
 # создание нового платежа
 def new_payment(value : float):

@@ -1,5 +1,6 @@
 from pydantic import BaseModel
 from datetime import datetime
+from typing import Optional
 
 class UserBase(BaseModel):
     email: str
@@ -47,3 +48,14 @@ class BookingCancelResponse(BaseModel):
 
 class PaymentURL(BaseModel):
     url: str
+
+# Модели данных для вебхука
+class PaymentObject(BaseModel):
+    id: str
+    status: str
+    amount: dict
+    metadata: Optional[dict] = None
+
+class WebhookData(BaseModel):
+    event: str
+    object: PaymentObject
