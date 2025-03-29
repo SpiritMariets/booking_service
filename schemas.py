@@ -33,6 +33,7 @@ class BookingBase(BaseModel):
     start_time: datetime
     end_time: datetime
     total_price: float
+    payment_id: str
 
 class Booking(BookingBase):
     id: int
@@ -43,3 +44,6 @@ class Booking(BookingBase):
 class BookingCancelResponse(BaseModel):
     message: str
     booking_id: int
+
+class PaymentURL(BaseModel):
+    url: str

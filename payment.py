@@ -11,7 +11,8 @@ SECRET_KEY = os.getenv("SECRET_KEY")
 Configuration.account_id = SHOP_ID
 Configuration.secret_key = SECRET_KEY
 
-async def new_payment(value : float):
+# создание нового платежа
+def new_payment(value : float):
     payment = Payment.create({
         "amount": {
             "value": f"{value}",
@@ -26,7 +27,8 @@ async def new_payment(value : float):
     }, uuid.uuid4())
     return payment
 
-async def new_refund(value : float, payment_id : str):
+# создание возврата
+def new_refund(value : float, payment_id : str):
     refund = Refund.create({
         "amount": {
             "value": f"{value}",

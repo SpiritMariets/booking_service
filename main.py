@@ -3,7 +3,9 @@ from sqlalchemy.orm import Session
 import models
 import schemas
 import crud
+import payment
 from database import SessionLocal, engine
+from datetime import datetime, timedelta
 
 # Создаем таблицы в базе данных
 models.Base.metadata.create_all(bind=engine)
@@ -35,9 +37,13 @@ def read_user(user_id: int, db: Session = Depends(get_db)):
     return db_user
 
 # Создание бронирования
-@app.post("/bookings/", response_model=schemas.Booking)
+@app.post("/bookings/", response_model=schemas.PaymentURL)
 def create_booking(booking: schemas.BookingBase, db: Session = Depends(get_db)):
-    return crud.create_booking(db=db, booking=booking)
+    booking_payment = payment.new_payment(booking.total_price)
+    booking.payment_id = booking_payment.id
+    crud.create_booking(db=db, booking=booking)
+    return {"url" : booking_payment.confirmation.confirmation_url}
+    #return crud.create_booking(db=db, booking=booking)
 
 # Получение информации о корте
 @app.get("/courts/{court_id}", response_model=schemas.Court)
@@ -52,4 +58,6 @@ def cancel_booking(booking_id: int, db: Session = Depends(get_db)):
     db_booking = crud.cancel_booking(db, booking_id=booking_id)
     if db_booking is None:
         raise HTTPException(status_code=404, detail="Booking not found")
+    if (db_booking.start_time - datetime.now() > timedelta(hours=24)) :
+        payment.new_refund(db_booking.total_price, db_booking.payment_id)
     return {"message": "Booking cancelled successfully", "booking_id": booking_id}
