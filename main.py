@@ -7,7 +7,7 @@ import schemas
 import crud
 import payment
 from database import SessionLocal, engine
-from datetime import datetime, timedelta
+from datetime import date
 
 # Создаем таблицы в базе данных
 models.Base.metadata.create_all(bind=engine)
@@ -22,21 +22,11 @@ def get_db():
     finally:
         db.close()
 
-# Регистрация пользователя
-@app.post("/users/", response_model=schemas.User)
-def create_user(user: schemas.UserCreate, db: Session = Depends(get_db)):
-    db_user = crud.get_user_by_email(db, email=user.email)
-    if db_user:
-        raise HTTPException(status_code=400, detail="Email already registered")
-    return crud.create_user(db=db, user=user)
-
-# Получение информации о пользователе
-@app.get("/users/{user_id}", response_model=schemas.User)
-def read_user(user_id: int, db: Session = Depends(get_db)):
-    db_user = crud.get_user(db, user_id=user_id)
-    if db_user is None:
-        raise HTTPException(status_code=404, detail="User not found")
-    return db_user
+#with Session(autoflush=False, bind=engine) as db:
+ #   for id in range(1, 5):
+  #      for day in range(1, 8):
+   #         for hour in range(8, 24):
+    #            crud.create_prices(db=db, price={"court_id": id, "day": day, "hour": hour, "price": id * day * hour}) 
 
 # Создание бронирования
 @app.post("/bookings/", response_model=schemas.PaymentURL)
@@ -45,7 +35,6 @@ def create_booking(booking: schemas.BookingBase, db: Session = Depends(get_db)):
     booking.payment_id = booking_payment.id
     crud.create_booking(db=db, booking=booking)
     return {"url" : booking_payment.confirmation.confirmation_url}
-    #return crud.create_booking(db=db, booking=booking)
 
 # Получение информации о корте
 @app.get("/courts/{court_id}", response_model=schemas.Court)
@@ -55,27 +44,29 @@ def read_court(court_id: int, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Court not found")
     return db_court
 
-# Отмена бронирования
+@app.get("/price/{court_id}/{day}", response_model=schemas.Price)
+def get_price(court_id: int, day: int, db: Session = Depends(get_db)):
+    db_price = crud.get_price(db, court_id=court_id, day=day)
+    if db_price is None:
+        raise HTTPException(status_code=404, detail="Price not found")
+    return {"price": db_price}
+
+# Отмена бронирования 
 @app.delete("/bookings/{booking_id}", response_model=schemas.BookingCancelResponse)
 def cancel_booking(booking_id: int, db: Session = Depends(get_db)):
     db_booking = crud.cancel_booking(db, booking_id=booking_id)
     if db_booking is None:
         raise HTTPException(status_code=404, detail="Booking not found")
-    if (db_booking.start_time - datetime.now() > timedelta(hours=24)) :
-        payment.new_refund(db_booking.total_price, db_booking.payment_id)
     return {"message": "Booking cancelled successfully", "booking_id": booking_id}
 
-# Получение информации о бронированиях пользователя
-@app.get("/bookings/{user_id}", response_model=list[schemas.Booking])
-def get_user_bookings(user_id: int, db: Session = Depends(get_db)):
-    db_booking = crud.get_user_bookings(db, user_id=user_id)
-    if db_booking is None:
-        raise HTTPException(status_code=404, detail="Bookings not found")
-    return db_booking
-
+# Получение информации о свободном времени корта
+@app.get("/free_time/{court_id}/{date}", response_model=schemas.CourtFreeTime)
+def get_free_time(court_id: int, date: date, db: Session = Depends(get_db)):
+    db_court_free_time = crud.get_court_free_time(db, court_id=court_id, date=date)
+    return {"free_time": db_court_free_time}
 
 # Обработчик вебхуков (почему то не работает)
-@app.post(":443/api/yookassa-webhook")
+@app.post("/api/yookassa-webhook")
 async def handle_webhook(request: Request, db : Session = Depends(get_db)):
     print('*')
     # Получаем тело запроса как bytes для проверки подписи

@@ -3,11 +3,13 @@ from yookassa import Configuration, Payment, Refund
 from dotenv import load_dotenv
 import os
 
+# загрузка переменных окружения и инициализация переменных
 load_dotenv()
 
 SHOP_ID = os.getenv("SHOP_ID")
 SECRET_KEY = os.getenv("SECRET_KEY")
 LOG_FILE = os.getenv("LOG_FILE")
+RETURN_URL = os.getenv("RETURN_URL")
 
 Configuration.account_id = SHOP_ID
 Configuration.secret_key = SECRET_KEY
@@ -27,10 +29,10 @@ def new_payment(value : float):
         },
         "confirmation": {
             "type": "redirect",
-            "return_url": "https://www.google.com/"
+            "return_url": f"{RETURN_URL}"
         },
         "capture": True,
-        "description": "Order No. 1"
+        "description": "Court's booking"
     }, uuid.uuid4())
     return payment
 

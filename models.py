@@ -1,37 +1,42 @@
-from sqlalchemy import Column, Integer, String, Float, DateTime, ForeignKey
+from sqlalchemy import Column, Integer, String, Float, Date, Time, ForeignKey
 from sqlalchemy.orm import relationship
 from database import Base
 
-class User(Base):
-    __tablename__ = "users"
-    id = Column(Integer, primary_key=True, index=True)
-    email = Column(String, unique=True, index=True)
-    hashed_password = Column(String)
-    full_name = Column(String)
-    phone = Column(String)
-
-    bookings = relationship("Booking", back_populates="user")
-
+# таблица courts
 class Court(Base):
     __tablename__ = "courts"
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String, index=True)
     location = Column(String)
     type = Column(String)
-    price_per_hour = Column(Float)
 
     bookings = relationship("Booking", back_populates="court")
+    price = relationship("Price", back_populates="courts")
 
+# таблица prices: цены кортов в определенный час и день недели
+class Price(Base):
+    __tablename__ = "prices"
+    id = Column(Integer, primary_key=True, index=True)
+    court_id = Column(Integer, ForeignKey("courts.id"))
+    day = Column(Integer)
+    hour = Column(Integer)
+    price = Column(Float)
+
+    courts = relationship("Court", back_populates="price")
+
+# таблица bookings
 class Booking(Base):
     __tablename__ = "bookings"
     id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, ForeignKey("users.id"))
+    name = Column(String)
+    email = Column(String, index=True)
+    phone = Column(String, index=True)
     court_id = Column(Integer, ForeignKey("courts.id"))
-    start_time = Column(DateTime)
-    end_time = Column(DateTime)
+    date = Column(Date)
+    start_time = Column(Integer)
+    end_time = Column(Integer)
     total_price = Column(Float)
     status = Column(String, default="pending")
     payment_id = Column(String, unique=True)
 
-    user = relationship("User", back_populates="bookings")
     court = relationship("Court", back_populates="bookings")

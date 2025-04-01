@@ -1,26 +1,11 @@
 from pydantic import BaseModel
-from datetime import datetime
+from datetime import date
 from typing import Optional
-
-class UserBase(BaseModel):
-    email: str
-    full_name: str
-    phone: str
-
-class UserCreate(UserBase):
-    password: str
-
-class User(UserBase):
-    id: int
-
-    class Config:
-        orm_mode = True
 
 class CourtBase(BaseModel):
     name: str
     location: str
     type: str
-    price_per_hour: float
 
 class Court(CourtBase):
     id: int
@@ -28,11 +13,26 @@ class Court(CourtBase):
     class Config:
         orm_mode = True
 
-class BookingBase(BaseModel):
-    user_id: int
+class CourtFreeTime(BaseModel):
+    free_time: list[int]
+
+class PriceAdd(BaseModel):
     court_id: int
-    start_time: datetime
-    end_time: datetime
+    day: int
+    hour: int
+    price: float
+
+class Price(BaseModel):
+    price: list[dict[int, float]]
+
+class BookingBase(BaseModel):
+    court_id: int
+    name: str
+    email: str
+    phone: str
+    date : date
+    start_time: int
+    end_time: int
     total_price: float
     payment_id: str
 
