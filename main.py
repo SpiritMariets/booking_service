@@ -22,34 +22,45 @@ def get_db():
     finally:
         db.close()
 
-#with Session(autoflush=False, bind=engine) as db:
- #   for id in range(1, 5):
-  #      for day in range(1, 8):
-   #         for hour in range(8, 24):
-    #            crud.create_prices(db=db, price={"court_id": id, "day": day, "hour": hour, "price": id * day * hour}) 
+with Session(autoflush=False, bind=engine) as db:
+    if db.query(models.Court).filter(models.Court.id == 1).first() is None:
+        first = models.Court(name="sosulki", location="fili", type="full")
+        second = models.Court(name="plintus", location="univer", type="part")
+        third = models.Court(name="solnyshko", location="univer", type="full")
+        forth = models.Court(name="fk a", location="solntsevo", type="part")
+        db.add_all([first, second, third, forth])  
+        db.commit()
+
+        for id in range(1, 5):
+            for day in range(1, 8):
+                for hour in range(8, 24):
+                    crud.create_prices(db=db, price={"court_id": id, "day": day, "hour": hour, "price": id * day * hour}) 
+        db.commit()   
 
 # Создание бронирования
 @app.post("/bookings/", response_model=schemas.PaymentURL)
 def create_booking(booking: schemas.BookingBase, db: Session = Depends(get_db)):
     booking_payment = payment.new_payment(booking.total_price)
     booking.payment_id = booking_payment.id
+    free_time = crud.get_court_free_time(db, court_id=booking.court_id, date=booking.date)
+    for i in range(booking.start_time, booking.end_time):
+        if i not in free_time:
+            raise HTTPException(status_code=404, detail="This time is busy")
     crud.create_booking(db=db, booking=booking)
     return {"url" : booking_payment.confirmation.confirmation_url}
 
-# Получение информации о корте
-@app.get("/courts/{court_id}", response_model=schemas.Court)
-def read_court(court_id: int, db: Session = Depends(get_db)):
-    db_court = crud.get_court(db, court_id=court_id)
-    if db_court is None:
-        raise HTTPException(status_code=404, detail="Court not found")
+# Получение информации о кортах
+@app.get("/courts/", response_model=list[schemas.Court])
+def read_court(db: Session = Depends(get_db)):
+    db_court = crud.get_courts(db)
     return db_court
 
-@app.get("/price/{court_id}/{day}", response_model=schemas.Price)
-def get_price(court_id: int, day: int, db: Session = Depends(get_db)):
-    db_price = crud.get_price(db, court_id=court_id, day=day)
-    if db_price is None:
-        raise HTTPException(status_code=404, detail="Price not found")
-    return {"price": db_price}
+@app.get("/price/{day}", response_model=list[schemas.Price])
+def get_price(day: int, db: Session = Depends(get_db)):
+    db_price = crud.get_price(db, day=day)
+    if len(db_price) == 0:
+        raise HTTPException(status_code=404, detail="Day not in week")
+    return db_price
 
 # Отмена бронирования 
 @app.delete("/bookings/{booking_id}", response_model=schemas.BookingCancelResponse)
@@ -60,10 +71,9 @@ def cancel_booking(booking_id: int, db: Session = Depends(get_db)):
     return {"message": "Booking cancelled successfully", "booking_id": booking_id}
 
 # Получение информации о свободном времени корта
-@app.get("/free_time/{court_id}/{date}", response_model=schemas.CourtFreeTime)
-def get_free_time(court_id: int, date: date, db: Session = Depends(get_db)):
-    db_court_free_time = crud.get_court_free_time(db, court_id=court_id, date=date)
-    return {"free_time": db_court_free_time}
+@app.get("/free_time/{date}", response_model=list[schemas.CourtFreeTime])
+def get_free_time(date: date, db: Session = Depends(get_db)):
+    return crud.get_court_free_time(db, date=date)
 
 # Обработчик вебхуков (почему то не работает)
 @app.post("/api/yookassa-webhook")

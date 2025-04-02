@@ -14,6 +14,7 @@ class Court(CourtBase):
         orm_mode = True
 
 class CourtFreeTime(BaseModel):
+    court_id: int
     free_time: list[int]
 
 class PriceAdd(BaseModel):
@@ -23,7 +24,9 @@ class PriceAdd(BaseModel):
     price: float
 
 class Price(BaseModel):
-    price: list[dict[int, float]]
+    court_id: int
+    hour: int
+    price: float
 
 class BookingBase(BaseModel):
     court_id: int
