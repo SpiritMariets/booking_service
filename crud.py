@@ -28,8 +28,8 @@ def get_free_time(db: Session, date: date):
                                                    models.Booking.date == date, 
                                                    models.Booking.status != "canceled").order_by(models.Booking.start_time).all()
         court_free_time = [i for i in range(DAY_BEGINNING, DAY_ENDING)]
-        for c in db_court:
-            for i in range(c.start_time, c.end_time):
+        for court in db_court:
+            for i in range(court.start_time, court.end_time):
                 court_free_time.remove(i)
         free_time.append({"court_id": c.id, "free_time": court_free_time})
     return free_time
