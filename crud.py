@@ -20,7 +20,7 @@ def get_price(db: Session, day: int):
     return db.query(models.Price).filter(models.Price.day == day).all()
 
 # получение свободного времени всех кортов в определённый день
-def get_court_free_time(db: Session, date: date):
+def get_free_time(db: Session, date: date):
     db_courts = get_courts(db=db)
     free_time = []
     for c in db_courts:

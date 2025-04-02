@@ -73,7 +73,7 @@ def cancel_booking(booking_id: int, db: Session = Depends(get_db)):
 # Получение информации о свободном времени корта
 @app.get("/free_time/{date}", response_model=list[schemas.CourtFreeTime])
 def get_free_time(date: date, db: Session = Depends(get_db)):
-    return crud.get_court_free_time(db, date=date)
+    return crud.get_free_time(db, date=date)
 
 # Обработчик вебхуков (почему то не работает)
 @app.post("/api/yookassa-webhook")
