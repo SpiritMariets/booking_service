@@ -1,5 +1,9 @@
 import uuid
+import crud
+import time
 from yookassa import Configuration, Payment, Refund
+from sqlalchemy.orm import Session
+from database import SessionLocal, engine
 from dotenv import load_dotenv
 import os
 
@@ -46,3 +50,15 @@ def new_refund(value : float, payment_id : str):
         "payment_id": f"{payment_id}"
     })
     return refund
+
+def make_get_request():
+    with Session(autoflush=False, bind=engine) as db:
+        while True:
+            db_bookings = crud.get_pending_bookings(db)
+            for booking in db_bookings:
+                payment = Payment.find_one(booking.payment_id)
+                if payment.status == "succeeded":
+                    crud.update_booking(db, payment_id = booking.payment_id, status="succeeded")
+                elif payment.status == "canceled":
+                    crud.update_booking(db, payment_id = booking.payment_id, status="canceled")
+            time.sleep(30)  # Задержка 30 секунд

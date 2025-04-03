@@ -1,5 +1,6 @@
 from fastapi import FastAPI, Depends, HTTPException, Request, status
 from sqlalchemy.orm import Session
+import threading
 import hmac
 import hashlib
 import models
@@ -21,6 +22,11 @@ def get_db():
         yield db
     finally:
         db.close()
+
+
+# Запуск в отдельном потоке
+thread = threading.Thread(target=payment.make_get_request, daemon=True)
+thread.start()
 
 with Session(autoflush=False, bind=engine) as db:
     if db.query(models.Court).filter(models.Court.id == 1).first() is None:
@@ -126,7 +132,7 @@ async def handle_webhook(request: Request, db : Session = Depends(get_db)):
 
     elif webhook_data.event == "payment.canceled":
         # Платеж отменен
-        await process_canceled_payment(payment_id)
+        await process_canceled_payment(payment_id, db)
         return {"status": "payment canceled"}
     
     return {"status": "unknown event"}
@@ -139,10 +145,8 @@ async def process_successful_payment(payment_id: str, db):
     # 1. Найти заказ по payment_id
     # 2. Обновить статус на "оплачено"
     # 3. Активировать услугу/отправить товар
-    print(f"Платеж {payment_id} успешно обработан")
 
 
 async def process_canceled_payment(payment_id: str, db):
     """Обработка отмененного платежа"""
-    crud.update_booking(db, payment_id = payment_id, status="succeeded")
-    print(f"Платеж {payment_id} был отменен")
+    crud.update_booking(db, payment_id = payment_id, status="canceled")

@@ -53,6 +53,10 @@ def create_booking(db: Session, booking: schemas.BookingBase):
     db.refresh(db_booking)
     return db_booking
 
+# получения бронирований, ожидающих подтверждения
+def get_pending_bookings(db: Session):
+    return db.query(models.Booking).filter(models.Booking.status == "pending").all()
+
 # добавление цен
 def create_prices(db: Session, price: dict):
     db_price = models.Price(**price)
