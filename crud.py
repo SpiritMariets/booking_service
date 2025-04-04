@@ -12,15 +12,15 @@ DAY_BEGINNING = int(os.getenv("DAY_BEGINNING"))
 DAY_ENDING = int(os.getenv("DAY_ENDING"))
 
 # получение информации о корте по id
-def get_courts(db: Session):
+async def get_courts(db: Session):
     return db.query(models.Court).all()
 
 # получение цены 
-def get_price(db: Session, day: int):
+async def get_price(db: Session, day: int):
     return db.query(models.Price).filter(models.Price.day == day).all()
 
 # получение свободного времени всех кортов в определённый день
-def get_free_time(db: Session, date: date):
+async def get_free_time(db: Session, date: date):
     db_courts = get_courts(db=db)
     free_time = []
     for c in db_courts:
@@ -35,7 +35,7 @@ def get_free_time(db: Session, date: date):
     return free_time
 
 # получение всех кортов в определенный дату и временное окно
-def get_free_time_window(db: Session, date: date, start_time: int, end_time: int):
+async def get_free_time_window(db: Session, date: date, start_time: int, end_time: int):
     db_prices = get_price(db=db, day=(date.weekday() + 1))
     free_time = get_free_time(db=db, date=date)
     free_court = {i: [] for i in range(start_time, end_time)}
@@ -48,7 +48,7 @@ def get_free_time_window(db: Session, date: date, start_time: int, end_time: int
     return free_court
 
 # получение свободного времени определенного корта в определённый день
-def get_court_free_time(db: Session, court_id: int, date: date):
+async def get_court_free_time(db: Session, court_id: int, date: date):
     db_court = db.query(models.Booking).filter(models.Booking.court_id == court_id, 
                                                models.Booking.date == date, 
                                                models.Booking.status != "canceled").order_by(models.Booking.start_time).all()
@@ -59,7 +59,7 @@ def get_court_free_time(db: Session, court_id: int, date: date):
     return free_time
 
 # создание нового бронирования
-def create_booking(db: Session, booking: schemas.BookingBase):
+async def create_booking(db: Session, booking: schemas.BookingBase):
     db_booking = models.Booking(**booking.dict())
     db.add(db_booking)
     db.commit()
@@ -67,11 +67,11 @@ def create_booking(db: Session, booking: schemas.BookingBase):
     return db_booking
 
 # получения бронирований, ожидающих подтверждения
-def get_pending_bookings(db: Session):
+async def get_pending_bookings(db: Session):
     return db.query(models.Booking).filter(models.Booking.status == "pending").all()
 
 # добавление цен
-def create_prices(db: Session, price: dict):
+async def create_prices(db: Session, price: dict):
     db_price = models.Price(**price)
     db.add(db_price)
     db.commit()
@@ -79,7 +79,7 @@ def create_prices(db: Session, price: dict):
     return db_price
 
 # отмена бронирования
-def cancel_booking(db: Session, booking_id: int):
+async def cancel_booking(db: Session, booking_id: int):
     db_booking = db.query(models.Booking).filter(models.Booking.id == booking_id, models.Booking.status == "succeeded").first()
     if db_booking is None:
         return None  # Бронирование не найдено
@@ -89,7 +89,7 @@ def cancel_booking(db: Session, booking_id: int):
     return db_booking
 
 # обновление статуса бронирования
-def update_booking(db : Session, payment_id: str, status : str):
+async def update_booking(db : Session, payment_id: str, status : str):
     db_booking = db.query(models.Booking).filter(models.Booking.payment_id == payment_id).first()
     if db_booking is None:
         return None  # Бронирование не найдено

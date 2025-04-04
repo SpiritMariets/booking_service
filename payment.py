@@ -19,13 +19,13 @@ Configuration.account_id = SHOP_ID
 Configuration.secret_key = SECRET_KEY
 
 # логирование вебхуков
-def log_webhook(data: dict):
+async def log_webhook(data: dict):
     with open(LOG_FILE, "a") as f:
         from datetime import datetime
         f.write(f"\n[{datetime.now()}] {data}\n")
 
 # создание нового платежа
-def new_payment(value : float):
+async def new_payment(value : float):
     payment = Payment.create({
         "amount": {
             "value": f"{value}",
@@ -41,7 +41,7 @@ def new_payment(value : float):
     return payment
 
 # создание возврата
-def new_refund(value : float, payment_id : str):
+async def new_refund(value : float, payment_id : str):
     refund = Refund.create({
         "amount": {
             "value": f"{value}",
@@ -51,7 +51,7 @@ def new_refund(value : float, payment_id : str):
     })
     return refund
 
-def make_get_request():
+async def make_get_request():
     with Session(autoflush=False, bind=engine) as db:
         while True:
             db_bookings = crud.get_pending_bookings(db)

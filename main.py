@@ -16,7 +16,7 @@ models.Base.metadata.create_all(bind=engine)
 app = FastAPI()
 
 # Зависимость для получения сессии базы данных
-def get_db():
+async def get_db():
     db = SessionLocal()
     try:
         yield db
@@ -30,7 +30,7 @@ thread.start()
 
 # Создание бронирования
 @app.post("/bookings/", response_model=schemas.PaymentURL)
-def create_booking(booking: schemas.BookingBase, db: Session = Depends(get_db)):
+async def create_booking(booking: schemas.BookingBase, db: Session = Depends(get_db)):
     if (booking.total_price <= 0):
         raise HTTPException(status_code=404, detail="Incorrent total_price")
     booking_payment = payment.new_payment(booking.total_price)
@@ -44,12 +44,12 @@ def create_booking(booking: schemas.BookingBase, db: Session = Depends(get_db)):
 
 # Получение информации о кортах
 @app.get("/courts/", response_model=list[schemas.Court])
-def read_court(db: Session = Depends(get_db)):
+async def read_court(db: Session = Depends(get_db)):
     db_court = crud.get_courts(db)
     return db_court
 
 @app.get("/price/{day}", response_model=list[schemas.Price])
-def get_price(day: int, db: Session = Depends(get_db)):
+async def get_price(day: int, db: Session = Depends(get_db)):
     db_price = crud.get_price(db, day=day)
     if len(db_price) == 0:
         raise HTTPException(status_code=404, detail="Day not in week")
@@ -57,7 +57,7 @@ def get_price(day: int, db: Session = Depends(get_db)):
 
 # Отмена бронирования 
 @app.delete("/bookings/{booking_id}", response_model=schemas.BookingCancelResponse)
-def cancel_booking(booking_id: int, db: Session = Depends(get_db)):
+async def cancel_booking(booking_id: int, db: Session = Depends(get_db)):
     db_booking = crud.cancel_booking(db, booking_id=booking_id)
     if db_booking is None:
         raise HTTPException(status_code=404, detail="Booking not found")
@@ -65,11 +65,11 @@ def cancel_booking(booking_id: int, db: Session = Depends(get_db)):
 
 # Получение информации о свободном времени корта
 @app.get("/free_time/{date}", response_model=list[schemas.CourtFreeTime])
-def free_time(date: date, db: Session = Depends(get_db)):
+async def free_time(date: date, db: Session = Depends(get_db)):
     return crud.get_free_time(db, date=date)
 
 @app.get("/free_time/{date}/{start_time}/{end_time}")
-def free_time_window(date: date, start_time: int = 8, end_time: int = 24, db: Session = Depends(get_db)):
+async def free_time_window(date: date, start_time: int = 8, end_time: int = 24, db: Session = Depends(get_db)):
     return crud.get_free_time_window(db, date=date, start_time=start_time, end_time=end_time)
 
 # Обработчик вебхуков (почему то не работает)
