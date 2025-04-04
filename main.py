@@ -1,19 +1,31 @@
 from fastapi import FastAPI, Depends, HTTPException, Request, status
 from sqlalchemy.orm import Session
 import threading
-import hmac
-import hashlib
 import models
 import schemas
 import crud
 import payment
 from database import SessionLocal, engine
 from datetime import date
+from fastapi.middleware.cors import CORSMiddleware
 
 # Создаем таблицы в базе данных
 models.Base.metadata.create_all(bind=engine)
 
 app = FastAPI()
+
+origins = [
+    "http://localhost:5174",  # ваш фронтенд адрес
+    "http://127.0.0.1:5174"
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,  # или можно использовать ["*"] для разрешения всех доменов (не рекомендуется для продакшена)
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 # Зависимость для получения сессии базы данных
 def get_db():
