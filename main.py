@@ -16,7 +16,7 @@ models.Base.metadata.create_all(bind=engine)
 app = FastAPI()
 
 # Зависимость для получения сессии базы данных
-async def get_db():
+def get_db():
     db = SessionLocal()
     try:
         yield db
