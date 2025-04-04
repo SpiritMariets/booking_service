@@ -37,6 +37,6 @@ class Booking(Base):
     end_time = Column(Integer)
     total_price = Column(Float)
     status = Column(String, default="pending")
-    payment_id = Column(String, unique=True)
+    payment_id = Column(String)
 
     court = relationship("Court", back_populates="bookings")

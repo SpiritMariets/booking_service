@@ -28,6 +28,14 @@ class Price(BaseModel):
     hour: int
     price: float
 
+class BookingPost(BaseModel):
+    name: str
+    email: str
+    phone: str
+    date : date
+    total_price: float
+    slots: dict[str, list[int]]
+
 class BookingBase(BaseModel):
     court_id: int
     name: str

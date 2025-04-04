@@ -90,10 +90,10 @@ def cancel_booking(db: Session, booking_id: int):
 
 # обновление статуса бронирования
 def update_booking(db : Session, payment_id: str, status : str):
-    db_booking = db.query(models.Booking).filter(models.Booking.payment_id == payment_id).first()
-    if db_booking is None:
+    db_booking = db.query(models.Booking).filter(models.Booking.payment_id == payment_id).all()
+    if len(db_booking) == 0:
         return None  # Бронирование не найдено
-    db_booking.status = status
+    for booking in db_booking:
+        booking.status = status
     db.commit()
-    db.refresh(db_booking)
     return db_booking
