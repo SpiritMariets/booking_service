@@ -28,24 +28,11 @@ def get_db():
 thread = threading.Thread(target=payment.make_get_request, daemon=True)
 thread.start()
 
-with Session(autoflush=False, bind=engine) as db:
-    if db.query(models.Court).filter(models.Court.id == 1).first() is None:
-        first = models.Court(name="sosulki", location="fili", type="full")
-        second = models.Court(name="plintus", location="univer", type="part")
-        third = models.Court(name="solnyshko", location="univer", type="full")
-        forth = models.Court(name="fk a", location="solntsevo", type="part")
-        db.add_all([first, second, third, forth])  
-        db.commit()
-
-        for id in range(1, 5):
-            for day in range(1, 8):
-                for hour in range(8, 24):
-                    crud.create_prices(db=db, price={"court_id": id, "day": day, "hour": hour, "price": id * day * hour}) 
-        db.commit()   
-
 # Создание бронирования
 @app.post("/bookings/", response_model=schemas.PaymentURL)
 def create_booking(booking: schemas.BookingBase, db: Session = Depends(get_db)):
+    if (booking.total_price <= 0):
+        raise HTTPException(status_code=404, detail="Incorrent total_price")
     booking_payment = payment.new_payment(booking.total_price)
     booking.payment_id = booking_payment.id
     free_time = crud.get_court_free_time(db, court_id=booking.court_id, date=booking.date)
@@ -80,6 +67,10 @@ def cancel_booking(booking_id: int, db: Session = Depends(get_db)):
 @app.get("/free_time/{date}", response_model=list[schemas.CourtFreeTime])
 def free_time(date: date, db: Session = Depends(get_db)):
     return crud.get_free_time(db, date=date)
+
+@app.get("/free_time/{date}/{start_time}/{end_time}")
+def free_time_window(date: date, start_time: int = 8, end_time: int = 24, db: Session = Depends(get_db)):
+    return crud.get_free_time_window(db, date=date, start_time=start_time, end_time=end_time)
 
 # Обработчик вебхуков (почему то не работает)
 @app.post("/api/yookassa-webhook")
