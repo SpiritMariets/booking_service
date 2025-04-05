@@ -22,18 +22,18 @@ def get_price(db: Session, day: int):
 
 # получение свободного времени всех кортов в определённый день
 def get_free_time(db: Session, date: date):
-    db_courts = get_courts(db=db)
+    all_courts = get_courts(db=db)
     free_time = []
-    for c in db_courts:
-        db_court = db.query(models.Booking).filter(models.Booking.court_id == c.id, 
+    for court in all_courts:
+        db_bookings = db.query(models.Booking).filter(models.Booking.court_id == court.id, 
                                                    models.Booking.date == date, 
                                                    models.Booking.status != "canceled").order_by(models.Booking.start_time).all()
         court_free_time = [i for i in range(DAY_BEGINNING, DAY_ENDING)]
-        for court in db_court:
-            for i in range(court.start_time, court.end_time):
+        for booking in db_bookings:
+            for i in range(booking.start_time, booking.end_time):
                 if i in court_free_time:   
                     court_free_time.remove(i)
-        free_time.append({"court_id": c.id, "free_time": court_free_time})
+        free_time.append({"court_id": court.id, "free_time": court_free_time})
     return free_time
 
 # получение всех кортов в определенный дату и временное окно
