@@ -45,6 +45,7 @@ class BookingBase(BaseModel):
     start_time: int
     end_time: int
     total_price: float
+    status: str
     payment_id: str
 
 class Booking(BookingBase):
@@ -59,6 +60,9 @@ class BookingCancelResponse(BaseModel):
 
 class PaymentURL(BaseModel):
     url: str
+
+class BookingResponce(BaseModel):
+    message: str
 
 # Модели данных для вебхука
 class PaymentObject(BaseModel):

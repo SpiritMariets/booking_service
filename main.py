@@ -13,19 +13,24 @@ from fastapi.middleware.cors import CORSMiddleware
 models.Base.metadata.create_all(bind=engine)
 
 app = FastAPI()
-
 origins = [
+    "http://web:5173",
     "http://localhost:5174",  # ваш фронтенд адрес
-    "http://127.0.0.1:5174"
+    "http://127.0.0.1:5173",
+    "http://79.73.201.110:5174", 
+    "http://127.0.0.1:3000",
+    "http://109.73.201.110",
+    "http://109.73.201.110/docs"
 ]
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins,  # или можно использовать ["*"] для разрешения всех доменов (не рекомендуется для продакшена)
+    allow_origins=["*"],  # или можно использовать ["*"] для разрешения всех доменов (не рекомендуется для продакшена)
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
 
 # Зависимость для получения сессии базы данных
 def get_db():
@@ -52,6 +57,7 @@ async def create_booking(booking: schemas.BookingPost, db: Session = Depends(get
         name = booking.name,
         total_price = booking.total_price,
         phone = booking.phone,
+        status= "pending",
         court_id = 1,
         start_time = 6,
         end_time = 7
@@ -65,6 +71,32 @@ async def create_booking(booking: schemas.BookingPost, db: Session = Depends(get
             crud.create_booking(db=db, booking=page_booking)
     
     return {"url" : booking_payment.confirmation.confirmation_url}
+
+# Создание бронирования от имени администратора
+@app.post("/admin/bookings", response_model=schemas.BookingResponce)
+async def create_admin_booking(booking: schemas.BookingPost, db: Session = Depends(get_db)):
+
+    page_booking = schemas.BookingBase(
+        payment_id = "admin",
+        date = booking.date,
+        email = booking.email,
+        name = booking.name,
+        total_price = booking.total_price,
+        phone = booking.phone,
+        court_id = 1,
+        start_time = 6,
+        end_time = 7,
+        status = "succeeded"
+    )
+
+    for item in booking.slots:
+        for t in booking.slots[item]:
+            page_booking.court_id = int(item)
+            page_booking.start_time = t
+            page_booking.end_time = t + 1
+            crud.create_booking(db=db, booking=page_booking)
+    
+    return {"message": "Booking created successfully by admin"}
 
 # Получение информации о кортах
 @app.get("/courts/", response_model=list[schemas.Court])

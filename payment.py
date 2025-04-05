@@ -56,6 +56,8 @@ def make_get_request():
         while True:
             db_bookings = crud.get_pending_bookings(db)
             for booking in db_bookings:
+                if booking.payment_id == "admin":
+                    continue
                 payment = Payment.find_one(booking.payment_id)
                 if payment.status == "succeeded":
                     crud.update_booking(db, payment_id = booking.payment_id, status="succeeded")
